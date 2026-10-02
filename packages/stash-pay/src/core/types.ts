@@ -166,7 +166,7 @@ export interface StashPayOptions {
 
   /**
    * Allowlist of hostnames `checkoutUrl` may use. Entries may be exact hosts
-   * (`'pay.stash.gg'`) or `'*.domain'` wildcards (matching the apex and any
+   * (`'checkout.stash.gg'`) or `'*.domain'` wildcards (matching the apex and any
    * subdomain). Undefined or empty = any valid http(s) URL is accepted. A URL
    * whose host is not allowed fires `onError` with code `DOMAIN_NOT_ALLOWED`.
    */

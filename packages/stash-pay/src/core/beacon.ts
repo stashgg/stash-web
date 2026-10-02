@@ -17,7 +17,11 @@ const API_BASE_BY_CHECKOUT_HOST: Record<string, string> = {
   'checkout.stag.stash.gg': 'https://test-api.stashstaging.com',
 };
 
-const LINK_ID_PATH = /^\/(?:pay|order|checkout|subscription)\/([^/?#]+)/;
+// Minted path shapes: /pay/<id>, /order/<id>, /checkout/<id>,
+// /subscription/<id>, /subscription/change/<id>. "change" must be matched
+// before the bare subscription prefix so its id is the captured segment.
+const LINK_ID_PATH =
+  /^\/(?:pay|order|checkout|subscription\/change|subscription)\/([^/?#]+)/;
 
 const EVENT_NAME_BY_CODE: Partial<Record<StashPayError['code'], string>> = {
   NETWORK_ERROR: 'SDK_IFRAME_ERROR',

@@ -59,7 +59,7 @@ export function PayButton({ checkoutUrl }: { checkoutUrl: string | null }) {
   let handle;
   try {
     handle = StashPay.open({
-      checkoutUrl: 'https://pay.stash.gg/checkout/abc...',
+      checkoutUrl: 'https://checkout.stash.gg/pay/abc...',
       position: 'center-modal',
       dismissOnBackdropClick: true,
       onSuccess: (e) => console.log('paid', e.orderId),
@@ -125,7 +125,7 @@ try {
 | `animationDuration` | `number` (ms) | `300` | Overrides the easing duration. |
 | `ariaLabel` | `string` | `'Stash Pay checkout'` | |
 | `iframe` | `StashPayIframeOptions` | — | See below. |
-| `allowedCheckoutHosts` | `string[]` | — | Optional host allowlist for `checkoutUrl`. Entries are exact hosts (`pay.stash.gg`) or `*.domain` wildcards (apex + any subdomain). If set and the URL's host is not allowed, pre-flight validation fails with `DOMAIN_NOT_ALLOWED`. Distinct from `iframe.allowedOrigins`, which validates `postMessage` origins. |
+| `allowedCheckoutHosts` | `string[]` | — | Optional host allowlist for `checkoutUrl`. Entries are exact hosts (`checkout.stash.gg`) or `*.domain` wildcards (apex + any subdomain). If set and the URL's host is not allowed, pre-flight validation fails with `DOMAIN_NOT_ALLOWED`. Distinct from `iframe.allowedOrigins`, which validates `postMessage` origins. |
 | `loadTimeout` | `number` (ms) | `20000` | If the checkout iframe does not load within this many ms, `onError` fires with `NETWORK_ERROR`. Set `0` to disable. |
 | `errorBeacon` | `boolean` | `true` | On open failures (load timeout, iframe error, mount failure), send a fire-and-forget diagnostic to Stash so integration breakage is detectable without a report. Carries only the checkout URL, error code/message, and SDK version. Set `false` to disable. |
 | `debug` | `boolean` | `false` | When `true`, logs SDK lifecycle and callback traces via `console.log` (`[stash-pay]` prefix). |
@@ -192,7 +192,7 @@ type StashPayErrorCode =
 <StashPay
   isOpen={open}
   checkoutUrl={url}
-  allowedCheckoutHosts={['pay.stash.gg', '*.stash.gg']}
+  allowedCheckoutHosts={['checkout.stash.gg', '*.stash.gg']}
   loadTimeout={15000}
   onError={(e) => {
     if (e.code === 'INVALID_URL') showBrokenLinkMessage();
@@ -413,7 +413,7 @@ whichever is easier to emit from the checkout page.
 ## Security notes
 
 - The default iframe `sandbox` includes `allow-same-origin` — this is required for the bridge installation, for the checkout page to read its own cookies, redirect through 3DS providers, and drive the webhook round-trip. Override via `iframe.sandbox` if you understand the implications.
-- For strict postMessage validation, pass `iframe.allowedOrigins: ['https://pay.stash.gg']` (or your environment's origin).
+- For strict postMessage validation, pass `iframe.allowedOrigins: ['https://checkout.stash.gg']` (or your environment's origin).
 - Strict CSP? Runtime `<style>` injection accepts a `cspNonce`; or disable injection with `injectStyles: false` and ship the stylesheet yourself via `<link rel="stylesheet" href="/stash-pay.css">`.
 
 ## SSR
