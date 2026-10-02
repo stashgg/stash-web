@@ -223,7 +223,11 @@ export class StashPayController {
     const nextLoadTimeout = this.options.loadTimeout ?? DEFAULT_LOAD_TIMEOUT_MS;
     if (nextLoadTimeout !== prevLoadTimeout && !this._loadSettled) {
       this.clearLoadTimeout();
-      if (this._currentSrc) this.armLoadTimeout(this._currentSrc);
+      // Re-arm only while the card is open: close() cancels the watchdog and
+      // a closed iframe must not collect a new one.
+      if (this._currentSrc && this._state === "open") {
+        this.armLoadTimeout(this._currentSrc);
+      }
     }
 
     if (
