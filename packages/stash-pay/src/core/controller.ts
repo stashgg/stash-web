@@ -207,6 +207,7 @@ export class StashPayController {
   update(partial: Partial<StashPayOptions>): void {
     if (this._state === "destroyed") return;
     this.log("update:", Object.keys(partial));
+    const prevLoadTimeout = this.options.loadTimeout ?? DEFAULT_LOAD_TIMEOUT_MS;
     this.options = { ...this.options, ...partial };
 
     if (!this.tree) return;
@@ -214,9 +215,13 @@ export class StashPayController {
     if ("theme" in partial) applyTheme(this.tree.root, this.options.theme);
     applyOptionsToDom(this.tree, this.options);
 
-    // Reconcile a pending load watchdog with the new timeout: 0 cancels it,
-    // a positive value restarts the wait for the current load.
-    if ("loadTimeout" in partial && !this._loadSettled) {
+    // Reconcile a pending load watchdog only when the resolved timeout actually
+    // changed: 0 cancels it, a positive value restarts the wait for the current
+    // load. Keyed on the value, not the partial: the React wrapper passes the
+    // full options object on every prop change, and an unrelated update must
+    // not reset the clock.
+    const nextLoadTimeout = this.options.loadTimeout ?? DEFAULT_LOAD_TIMEOUT_MS;
+    if (nextLoadTimeout !== prevLoadTimeout && !this._loadSettled) {
       this.clearLoadTimeout();
       if (this._currentSrc) this.armLoadTimeout(this._currentSrc);
     }
