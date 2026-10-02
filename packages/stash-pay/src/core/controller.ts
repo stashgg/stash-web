@@ -228,9 +228,13 @@ export class StashPayController {
     const nextLoadTimeout = this.options.loadTimeout ?? DEFAULT_LOAD_TIMEOUT_MS;
     if (nextLoadTimeout !== prevLoadTimeout && !this._loadSettled) {
       this.clearLoadTimeout();
-      // Re-arm only while the card is open: close() cancels the watchdog and
-      // a closed iframe must not collect a new one.
-      if (this._currentSrc && this._state === "open") {
+      // Re-arm while the card is open or still mounting (state "idle" until
+      // the first openInternal). close() cancels the watchdog and a
+      // closed/closing iframe must not collect a new one.
+      if (
+        this._currentSrc &&
+        (this._state === "open" || this._state === "idle")
+      ) {
         this.armLoadTimeout(this._currentSrc);
       }
     }
@@ -353,7 +357,11 @@ export class StashPayController {
     this._currentSrc = url;
     this.tree.root.setAttribute(DATA_ATTR.loading, "true");
     this.tree.iframe.src = url;
-    this.armLoadTimeout(url);
+    // A closed or closing card must not collect a watchdog (a staged URL swap
+    // loads hidden); open() arms it on reopen for an unsettled load.
+    if (this._state === "open" || this._state === "idle") {
+      this.armLoadTimeout(url);
+    }
   }
 
   /**
@@ -425,10 +433,22 @@ export class StashPayController {
       const parsed = parseMessage(ev, this.options.iframe?.allowedOrigins);
       if (parsed) {
         this.log("message: parsed", parsed.type, parsed);
-        if (this.tree && ev.source === this.tree.iframe.contentWindow) {
-          // Provably from our iframe: the checkout is alive even if its load
-          // event hasn't fired yet. A message from any other window is not
-          // proof the iframe loaded, so it must not disarm the watchdog.
+        let currentOrigin = "";
+        try {
+          currentOrigin = new URL(this._currentSrc ?? "").origin;
+        } catch {
+          // no current src; fall through without settling
+        }
+        if (
+          this.tree &&
+          ev.source === this.tree.iframe.contentWindow &&
+          ev.origin === currentOrigin
+        ) {
+          // Provably from our iframe and the current document's origin: the
+          // checkout is alive even if its load event hasn't fired yet. Known
+          // residual: the WindowProxy survives navigation, so a queued message
+          // from a previous SAME-origin document can still settle a fresh
+          // load's watchdog. ev.source alone cannot discriminate documents.
           this._loadSettled = true;
           this.clearLoadTimeout();
         }

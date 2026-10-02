@@ -208,7 +208,9 @@ checkout iframe is never created.
 
 For a syntactically valid URL whose server never responds, the load timeout
 surfaces a `NETWORK_ERROR` after a bounded wait (20s by default, tune with
-`loadTimeout`, disable with `0`).
+`loadTimeout`, disable with `0`). A checkout that finishes loading after the
+timeout still becomes ready: treat the error as the spinner giving up, not a
+terminal verdict.
 
 ### Pre-flight failures (`open()` / `mount()`)
 
