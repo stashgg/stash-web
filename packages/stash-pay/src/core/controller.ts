@@ -178,6 +178,11 @@ export class StashPayController {
       clearTimeout(this.closeTimeout);
       this.closeTimeout = null;
     }
+    // Reopening a card whose first load never settled: close() cancelled the
+    // watchdog, so arm a fresh one for the still-pending load.
+    if (!this._loadSettled && this._currentSrc && !this.loadTimeoutTimer) {
+      this.armLoadTimeout(this._currentSrc);
+    }
     this.openInternal();
   }
 
