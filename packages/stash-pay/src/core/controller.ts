@@ -445,12 +445,17 @@ export class StashPayController {
           ev.origin === currentOrigin
         ) {
           // Provably from our iframe and the current document's origin: the
-          // checkout is alive even if its load event hasn't fired yet. Known
-          // residual: the WindowProxy survives navigation, so a queued message
-          // from a previous SAME-origin document can still settle a fresh
-          // load's watchdog. ev.source alone cannot discriminate documents.
+          // checkout is alive even if its load event hasn't fired yet (its JS
+          // is executing; only subresources can still be pending), so hide the
+          // spinner like the load handler would. Without this, a pre-load
+          // envelope would disarm the watchdog yet leave the opaque loading
+          // overlay up with nothing left to clear it. Known residual: the
+          // WindowProxy survives navigation, so a queued message from a
+          // previous SAME-origin document can still settle a fresh load's
+          // watchdog. ev.source alone cannot discriminate documents.
           this._loadSettled = true;
           this.clearLoadTimeout();
+          this.tree.root.setAttribute(DATA_ATTR.loading, "false");
         }
         this.dispatchPaymentEvent(parsed);
       } else {
