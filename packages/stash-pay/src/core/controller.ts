@@ -14,6 +14,7 @@ import { installBridge } from "./bridge";
 import {
   DATA_ATTR,
   DEFAULT_ANIMATION_DURATION_MS,
+  DEFAULT_LOAD_TIMEOUT_MS,
   MESSAGE_PREFIX,
 } from "./constants";
 import { debugLog } from "./debug";
@@ -177,6 +178,11 @@ export class StashPayController {
       clearTimeout(this.closeTimeout);
       this.closeTimeout = null;
     }
+    // Reopening a card whose first load never settled: close() cancelled the
+    // watchdog, so arm a fresh one for the still-pending load.
+    if (!this._loadSettled && this._currentSrc && !this.loadTimeoutTimer) {
+      this.armLoadTimeout(this._currentSrc);
+    }
     this.openInternal();
   }
 
@@ -206,12 +212,32 @@ export class StashPayController {
   update(partial: Partial<StashPayOptions>): void {
     if (this._state === "destroyed") return;
     this.log("update:", Object.keys(partial));
+    const prevLoadTimeout = this.options.loadTimeout ?? DEFAULT_LOAD_TIMEOUT_MS;
     this.options = { ...this.options, ...partial };
 
     if (!this.tree) return;
 
     if ("theme" in partial) applyTheme(this.tree.root, this.options.theme);
     applyOptionsToDom(this.tree, this.options);
+
+    // Reconcile a pending load watchdog only when the resolved timeout actually
+    // changed: 0 cancels it, a positive value restarts the wait for the current
+    // load. Keyed on the value, not the partial: the React wrapper passes the
+    // full options object on every prop change, and an unrelated update must
+    // not reset the clock.
+    const nextLoadTimeout = this.options.loadTimeout ?? DEFAULT_LOAD_TIMEOUT_MS;
+    if (nextLoadTimeout !== prevLoadTimeout && !this._loadSettled) {
+      this.clearLoadTimeout();
+      // Re-arm while the card is open or still mounting (state "idle" until
+      // the first openInternal). close() cancels the watchdog and a
+      // closed/closing iframe must not collect a new one.
+      if (
+        this._currentSrc &&
+        (this._state === "open" || this._state === "idle")
+      ) {
+        this.armLoadTimeout(this._currentSrc);
+      }
+    }
 
     if (
       "checkoutUrl" in partial ||
@@ -331,16 +357,20 @@ export class StashPayController {
     this._currentSrc = url;
     this.tree.root.setAttribute(DATA_ATTR.loading, "true");
     this.tree.iframe.src = url;
-    this.armLoadTimeout(url);
+    // A closed or closing card must not collect a watchdog (a staged URL swap
+    // loads hidden); open() arms it on reopen for an unsettled load.
+    if (this._state === "open" || this._state === "idle") {
+      this.armLoadTimeout(url);
+    }
   }
 
   /**
-   * Arm the load-failure timeout. Opt-in: nothing happens unless `loadTimeout`
-   * is a positive number. A safety net for a syntactically valid `checkoutUrl`
-   * whose server never responds (the iframe `load` event would never fire).
+   * Arm the load-failure timeout. On by default; `loadTimeout: 0` opts out.
+   * A safety net for a syntactically valid `checkoutUrl` whose server never
+   * responds (the iframe `load` event would never fire).
    */
   private armLoadTimeout(srcAtArm: string): void {
-    const ms = this.options.loadTimeout;
+    const ms = this.options.loadTimeout ?? DEFAULT_LOAD_TIMEOUT_MS;
     if (typeof ms !== "number" || ms <= 0) return;
     this.log("iframe: arming load timeout", ms, "ms");
     this.loadTimeoutTimer = setTimeout(() => {
@@ -403,6 +433,30 @@ export class StashPayController {
       const parsed = parseMessage(ev, this.options.iframe?.allowedOrigins);
       if (parsed) {
         this.log("message: parsed", parsed.type, parsed);
+        let currentOrigin = "";
+        try {
+          currentOrigin = new URL(this._currentSrc ?? "").origin;
+        } catch {
+          // no current src; fall through without settling
+        }
+        if (
+          this.tree &&
+          ev.source === this.tree.iframe.contentWindow &&
+          ev.origin === currentOrigin
+        ) {
+          // Provably from our iframe and the current document's origin: the
+          // checkout is alive even if its load event hasn't fired yet (its JS
+          // is executing; only subresources can still be pending), so hide the
+          // spinner like the load handler would. Without this, a pre-load
+          // envelope would disarm the watchdog yet leave the opaque loading
+          // overlay up with nothing left to clear it. Known residual: the
+          // WindowProxy survives navigation, so a queued message from a
+          // previous SAME-origin document can still settle a fresh load's
+          // watchdog. ev.source alone cannot discriminate documents.
+          this._loadSettled = true;
+          this.clearLoadTimeout();
+          this.tree.root.setAttribute(DATA_ATTR.loading, "false");
+        }
         this.dispatchPaymentEvent(parsed);
       } else {
         this.log("message: ignored", { origin: ev.origin });
@@ -538,11 +592,17 @@ export class StashPayController {
     switch (event.type) {
       case "success":
         this._settled = true;
+        // A terminal outcome ends the session; the load watchdog must never
+        // fire after it, wherever the event arrived from.
+        this._loadSettled = true;
+        this.clearLoadTimeout();
         this.emitEvent("success", event);
         if (this.options.autoCloseOnSuccess !== false) this.close();
         break;
       case "failure":
         this._settled = true;
+        this._loadSettled = true;
+        this.clearLoadTimeout();
         this.emitEvent("failure", event);
         if (this.options.autoCloseOnFailure !== false) this.close();
         break;

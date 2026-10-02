@@ -62,7 +62,7 @@ export interface StashPayProps {
   /** Host allowlist forwarded to the controller. */
   allowedCheckoutHosts?: string[];
 
-  /** Opt-in iframe load timeout (ms). */
+  /** Iframe load timeout in ms. Default 20000; `0` disables. */
   loadTimeout?: number;
 
   /**

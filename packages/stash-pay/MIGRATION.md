@@ -104,7 +104,7 @@ Peer range unchanged: `react ^18.0.0 || ^19.0.0`.
 - **Callbacks fire once.** `onSuccess` and `onFailure` are terminal — each fires at most once per checkout session. Duplicate or late payment events (the checkout can deliver over two channels) are now dropped.
 - **`checkoutUrl` is validated.** An invalid URL — empty, unparseable, a non-`http(s)` scheme (`javascript:`/`data:` are rejected), or a host outside `allowedCheckoutHosts` — fires `onError` and the modal no longer opens, instead of leaving the checkout stuck on an endless loading spinner.
 - **`onError` now receives a `StashPayError`** (still an `Error`) with a `code`: `INVALID_URL`, `DOMAIN_NOT_ALLOWED`, `NETWORK_ERROR`, `MOUNT_ERROR`, `UNKNOWN`. Existing `(e: Error) => …` handlers keep working — `StashPayError extends Error`.
-- **New optional props:** `allowedCheckoutHosts` (host allowlist, `*.domain` wildcards) and `loadTimeout` (opt-in load-failure timeout in ms).
+- **New optional props:** `allowedCheckoutHosts` (host allowlist, `*.domain` wildcards) and `loadTimeout` (opt-in load-failure timeout in ms; on by default since 2.2.x).
 - **`PaymentFailureEvent` gained an optional `orderId`.**
 - **New exports:** `StashPayError` (class) and `StashPayErrorCode` (type) from the package root.
 
@@ -120,6 +120,12 @@ Peer range unchanged: `react ^18.0.0 || ^19.0.0`.
 In **2.1.0**, an invalid `checkoutUrl` fired `onError` but **`open()` still returned
 a handle** (a controller with nothing mounted). Mount failures could throw a plain
 `Error` without a stable `code`.
+
+**2.2.x also turns the load-failure timeout on by default** (20s): a checkout
+iframe that never loads now fires `onError` with `NETWORK_ERROR` instead of
+spinning forever. Set `loadTimeout: 0` to restore the old behavior. A checkout
+that finishes loading after the timeout still becomes ready; treat the error as
+the spinner giving up, not a terminal verdict.
 
 In **2.2.x**, pre-flight failures are consistent:
 
@@ -166,6 +172,4 @@ failures from the checkout page. Invalid URLs and mount errors use **`onError`**
 
 ### Unchanged from 2.1.x
 
-- `loadTimeout` remains **opt-in** for slow or unreachable hosts (e.g. a valid-looking
-  URL whose server never responds).
 - `update()` with a new invalid `checkoutUrl` still emits `onError` only (does not throw).

@@ -174,8 +174,7 @@ export interface StashPayOptions {
 
   /**
    * Milliseconds to wait for the checkout iframe's first load before firing
-   * `onError` with code `NETWORK_ERROR`. Omitted or `0` disables the timeout
-   * (the default — the timeout is opt-in).
+   * `onError` with code `NETWORK_ERROR`. Default: 20000. Set `0` to disable.
    */
   loadTimeout?: number;
 
