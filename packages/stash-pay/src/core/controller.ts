@@ -416,6 +416,13 @@ export class StashPayController {
       const parsed = parseMessage(ev, this.options.iframe?.allowedOrigins);
       if (parsed) {
         this.log("message: parsed", parsed.type, parsed);
+        if (this.tree && ev.source === this.tree.iframe.contentWindow) {
+          // Provably from our iframe: the checkout is alive even if its load
+          // event hasn't fired yet. A message from any other window is not
+          // proof the iframe loaded, so it must not disarm the watchdog.
+          this._loadSettled = true;
+          this.clearLoadTimeout();
+        }
         this.dispatchPaymentEvent(parsed);
       } else {
         this.log("message: ignored", { origin: ev.origin });
@@ -548,19 +555,20 @@ export class StashPayController {
       return;
     }
     this.log("payment: dispatch", event.type, event);
-    // A payment event proves the checkout is running, even if the iframe's
-    // load event never fired (out-of-tab flows). The load watchdog must not
-    // fire after this.
-    this._loadSettled = true;
-    this.clearLoadTimeout();
     switch (event.type) {
       case "success":
         this._settled = true;
+        // A terminal outcome ends the session; the load watchdog must never
+        // fire after it, wherever the event arrived from.
+        this._loadSettled = true;
+        this.clearLoadTimeout();
         this.emitEvent("success", event);
         if (this.options.autoCloseOnSuccess !== false) this.close();
         break;
       case "failure":
         this._settled = true;
+        this._loadSettled = true;
+        this.clearLoadTimeout();
         this.emitEvent("failure", event);
         if (this.options.autoCloseOnFailure !== false) this.close();
         break;
