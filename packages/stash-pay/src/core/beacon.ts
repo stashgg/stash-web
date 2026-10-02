@@ -68,17 +68,18 @@ export function sendErrorBeacon(
   const target = resolveBeaconTarget(checkoutUrl);
   if (!target) return false;
 
+  // Payload is deliberately minimal: the link id and a bounded error code.
+  // No raw URL (partners may append query data we should not store by
+  // default) and no free-text message (mount errors can wrap arbitrary
+  // partner-page exceptions). The server derives shop and canonical URL
+  // from the link id.
   const payload = JSON.stringify({
     checkout_link_id: target.linkId,
     events: [
       {
         name,
         timestamp: new Date().toISOString(),
-        params: {
-          code: error.code,
-          message: String(error.message).slice(0, 300),
-          checkout_url: checkoutUrl,
-        },
+        params: { code: error.code },
       },
     ],
   });

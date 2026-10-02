@@ -182,7 +182,7 @@ export interface StashPayOptions {
    * Send a fire-and-forget diagnostic to Stash when the checkout fails to
    * open (load timeout, iframe error, mount failure), so Stash can detect
    * integration breakage without a partner report. Carries only the checkout
-   * URL and the error code/message. Default: `true`;
+   * link id and a bounded error code. Default: `true`;
    * `false` disables.
    */
   errorBeacon?: boolean;
