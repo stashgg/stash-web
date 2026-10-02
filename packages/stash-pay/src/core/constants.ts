@@ -39,4 +39,3 @@ export const DEFAULT_ANIMATION_DURATION_MS = 300;
 export const DEFAULT_LOAD_TIMEOUT_MS = 20000;
 
 export const STYLE_TAG_ID = 'stash-pay-styles';
-
