@@ -214,6 +214,13 @@ export class StashPayController {
     if ("theme" in partial) applyTheme(this.tree.root, this.options.theme);
     applyOptionsToDom(this.tree, this.options);
 
+    // Reconcile a pending load watchdog with the new timeout: 0 cancels it,
+    // a positive value restarts the wait for the current load.
+    if ("loadTimeout" in partial && !this._loadSettled) {
+      this.clearLoadTimeout();
+      if (this._currentSrc) this.armLoadTimeout(this._currentSrc);
+    }
+
     if (
       "checkoutUrl" in partial ||
       "checkoutTheme" in partial ||
@@ -536,6 +543,11 @@ export class StashPayController {
       return;
     }
     this.log("payment: dispatch", event.type, event);
+    // A payment event proves the checkout is running, even if the iframe's
+    // load event never fired (out-of-tab flows). The load watchdog must not
+    // fire after this.
+    this._loadSettled = true;
+    this.clearLoadTimeout();
     switch (event.type) {
       case "success":
         this._settled = true;
