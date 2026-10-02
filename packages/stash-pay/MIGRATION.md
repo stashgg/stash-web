@@ -104,7 +104,7 @@ Peer range unchanged: `react ^18.0.0 || ^19.0.0`.
 - **Callbacks fire once.** `onSuccess` and `onFailure` are terminal — each fires at most once per checkout session. Duplicate or late payment events (the checkout can deliver over two channels) are now dropped.
 - **`checkoutUrl` is validated.** An invalid URL — empty, unparseable, a non-`http(s)` scheme (`javascript:`/`data:` are rejected), or a host outside `allowedCheckoutHosts` — fires `onError` and the modal no longer opens, instead of leaving the checkout stuck on an endless loading spinner.
 - **`onError` now receives a `StashPayError`** (still an `Error`) with a `code`: `INVALID_URL`, `DOMAIN_NOT_ALLOWED`, `NETWORK_ERROR`, `MOUNT_ERROR`, `UNKNOWN`. Existing `(e: Error) => …` handlers keep working — `StashPayError extends Error`.
-- **New optional props:** `allowedCheckoutHosts` (host allowlist, `*.domain` wildcards) and `loadTimeout` (opt-in load-failure timeout in ms).
+- **New optional props:** `allowedCheckoutHosts` (host allowlist, `*.domain` wildcards) and `loadTimeout` (load-failure timeout in ms, default 20000, `0` disables).
 - **`PaymentFailureEvent` gained an optional `orderId`.**
 - **New exports:** `StashPayError` (class) and `StashPayErrorCode` (type) from the package root.
 
@@ -166,6 +166,7 @@ failures from the checkout page. Invalid URLs and mount errors use **`onError`**
 
 ### Unchanged from 2.1.x
 
-- `loadTimeout` remains **opt-in** for slow or unreachable hosts (e.g. a valid-looking
-  URL whose server never responds).
+- `loadTimeout` is now **on by default** (20s) for slow or unreachable hosts (e.g. a
+  valid-looking URL whose server never responds). Set `loadTimeout: 0` to restore the
+  old behavior.
 - `update()` with a new invalid `checkoutUrl` still emits `onError` only (does not throw).

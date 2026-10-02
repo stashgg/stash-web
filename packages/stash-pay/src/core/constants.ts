@@ -34,4 +34,8 @@ export const DEFAULT_TITLE = 'Stash Pay checkout';
 export const DEFAULT_ARIA_LABEL = 'Stash Pay checkout';
 export const DEFAULT_ANIMATION_DURATION_MS = 300;
 
+// Load-failure timeout. Generous on purpose: slow mobile networks must not
+// produce false NETWORK_ERRORs. 0 opts out.
+export const DEFAULT_LOAD_TIMEOUT_MS = 20000;
+
 export const STYLE_TAG_ID = 'stash-pay-styles';

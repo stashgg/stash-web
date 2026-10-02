@@ -14,6 +14,7 @@ import { installBridge } from "./bridge";
 import {
   DATA_ATTR,
   DEFAULT_ANIMATION_DURATION_MS,
+  DEFAULT_LOAD_TIMEOUT_MS,
   MESSAGE_PREFIX,
 } from "./constants";
 import { debugLog } from "./debug";
@@ -335,12 +336,12 @@ export class StashPayController {
   }
 
   /**
-   * Arm the load-failure timeout. Opt-in: nothing happens unless `loadTimeout`
-   * is a positive number. A safety net for a syntactically valid `checkoutUrl`
-   * whose server never responds (the iframe `load` event would never fire).
+   * Arm the load-failure timeout. On by default; `loadTimeout: 0` opts out.
+   * A safety net for a syntactically valid `checkoutUrl` whose server never
+   * responds (the iframe `load` event would never fire).
    */
   private armLoadTimeout(srcAtArm: string): void {
-    const ms = this.options.loadTimeout;
+    const ms = this.options.loadTimeout ?? DEFAULT_LOAD_TIMEOUT_MS;
     if (typeof ms !== "number" || ms <= 0) return;
     this.log("iframe: arming load timeout", ms, "ms");
     this.loadTimeoutTimer = setTimeout(() => {
