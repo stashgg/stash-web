@@ -166,7 +166,7 @@ export interface StashPayOptions {
 
   /**
    * Allowlist of hostnames `checkoutUrl` may use. Entries may be exact hosts
-   * (`'pay.stash.gg'`) or `'*.domain'` wildcards (matching the apex and any
+   * (`'checkout.stash.gg'`) or `'*.domain'` wildcards (matching the apex and any
    * subdomain). Undefined or empty = any valid http(s) URL is accepted. A URL
    * whose host is not allowed fires `onError` with code `DOMAIN_NOT_ALLOWED`.
    */
@@ -177,6 +177,15 @@ export interface StashPayOptions {
    * `onError` with code `NETWORK_ERROR`. Default: 20000. Set `0` to disable.
    */
   loadTimeout?: number;
+
+  /**
+   * Send a fire-and-forget diagnostic to Stash when the checkout fails to
+   * open (load timeout, iframe error, mount failure), so Stash can detect
+   * integration breakage without a partner report. Carries only the checkout
+   * link id and a bounded error code. Default: `true`;
+   * `false` disables.
+   */
+  errorBeacon?: boolean;
 
   /**
    * When `true`, the SDK prints lifecycle and callback traces via `console.log`.

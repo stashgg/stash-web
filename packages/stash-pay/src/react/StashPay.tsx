@@ -65,6 +65,9 @@ export interface StashPayProps {
   /** Iframe load timeout in ms. Default 20000; `0` disables. */
   loadTimeout?: number;
 
+  /** Send error diagnostics to Stash on open failures. Default `true`; `false` disables. */
+  errorBeacon?: boolean;
+
   /**
    * When `true`, the SDK prints lifecycle and callback traces via `console.log`.
    * Default: `false`.
@@ -107,6 +110,7 @@ const DOM_OPTION_KEYS: (keyof StashPayProps)[] = [
   "animationDuration",
   "allowedCheckoutHosts",
   "loadTimeout",
+  "errorBeacon",
   "debug",
 ];
 
@@ -138,6 +142,7 @@ function buildOptions(
     animationDuration: p.animationDuration,
     allowedCheckoutHosts: p.allowedCheckoutHosts,
     loadTimeout: p.loadTimeout,
+    errorBeacon: p.errorBeacon,
     debug: p.debug,
     // Callback proxies — stable identity, always the latest closure.
     onOpen: () => propsRef.current.onOpen?.(),
