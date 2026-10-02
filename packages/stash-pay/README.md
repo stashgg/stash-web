@@ -127,6 +127,7 @@ try {
 | `iframe` | `StashPayIframeOptions` | — | See below. |
 | `allowedCheckoutHosts` | `string[]` | — | Optional host allowlist for `checkoutUrl`. Entries are exact hosts (`pay.stash.gg`) or `*.domain` wildcards (apex + any subdomain). If set and the URL's host is not allowed, pre-flight validation fails with `DOMAIN_NOT_ALLOWED`. Distinct from `iframe.allowedOrigins`, which validates `postMessage` origins. |
 | `loadTimeout` | `number` (ms) | `20000` | If the checkout iframe does not load within this many ms, `onError` fires with `NETWORK_ERROR`. Set `0` to disable. |
+| `errorBeacon` | `boolean` | `true` | On open failures (load timeout, iframe error, mount failure), send a fire-and-forget diagnostic to Stash so integration breakage is detectable without a report. Carries only the checkout URL, error code/message, and SDK version. Set `false` to disable. |
 | `debug` | `boolean` | `false` | When `true`, logs SDK lifecycle and callback traces via `console.log` (`[stash-pay]` prefix). |
 | `injectStyles` | `boolean` | UMD: `true`, else `false` | Runtime `<style>` injection toggle. |
 | `cspNonce` | `string` | — | Applied to the injected `<style>` when runtime injection is enabled. |

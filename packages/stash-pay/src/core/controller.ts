@@ -10,12 +10,14 @@
  *   - Translate iframe messages into typed events and fire user callbacks.
  */
 
+import { MAX_BEACONS_PER_CONTROLLER, sendErrorBeacon } from "./beacon";
 import { installBridge } from "./bridge";
 import {
   DATA_ATTR,
   DEFAULT_ANIMATION_DURATION_MS,
   DEFAULT_LOAD_TIMEOUT_MS,
   MESSAGE_PREFIX,
+  SDK_VERSION,
 } from "./constants";
 import { debugLog } from "./debug";
 import {
@@ -77,6 +79,8 @@ export class StashPayController {
   private _settled = false;
   /** Load-outcome latch — the first of load / error / timeout wins. */
   private _loadSettled = false;
+  /** Error beacons sent by this controller; capped so a loop can't flood. */
+  private _beaconsSent = 0;
   private _currentSrc: string | null = null;
 
   constructor(options: StashPayOptions) {
@@ -618,6 +622,16 @@ export class StashPayController {
     ...args: Parameters<StashPayEventMap[K]>
   ): void {
     this.log(`callback:${event}`, ...args);
+    if (
+      event === "error" &&
+      this.options.errorBeacon !== false &&
+      this._beaconsSent < MAX_BEACONS_PER_CONTROLLER &&
+      args[0] instanceof StashPayError
+    ) {
+      if (sendErrorBeacon(this.options.checkoutUrl, args[0], SDK_VERSION)) {
+        this._beaconsSent++;
+      }
+    }
     this.emitter.emit(event, ...args);
   }
 

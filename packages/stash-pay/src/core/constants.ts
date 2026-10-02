@@ -39,3 +39,7 @@ export const DEFAULT_ANIMATION_DURATION_MS = 300;
 export const DEFAULT_LOAD_TIMEOUT_MS = 20000;
 
 export const STYLE_TAG_ID = 'stash-pay-styles';
+
+// Keep in step with package.json; carried on error beacons so Stash can tell
+// which SDK build produced a failure.
+export const SDK_VERSION = '2.2.4';
