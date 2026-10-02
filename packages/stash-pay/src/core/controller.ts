@@ -17,7 +17,6 @@ import {
   DEFAULT_ANIMATION_DURATION_MS,
   DEFAULT_LOAD_TIMEOUT_MS,
   MESSAGE_PREFIX,
-  SDK_VERSION,
 } from "./constants";
 import { debugLog } from "./debug";
 import {
@@ -628,7 +627,7 @@ export class StashPayController {
       this._beaconsSent < MAX_BEACONS_PER_CONTROLLER &&
       args[0] instanceof StashPayError
     ) {
-      if (sendErrorBeacon(this.options.checkoutUrl, args[0], SDK_VERSION)) {
+      if (sendErrorBeacon(this.options.checkoutUrl, args[0])) {
         this._beaconsSent++;
       }
     }

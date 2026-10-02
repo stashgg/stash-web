@@ -57,7 +57,6 @@ export function resolveBeaconTarget(
 export function sendErrorBeacon(
   checkoutUrl: string | undefined,
   error: StashPayError,
-  sdkVersion: string,
 ): boolean {
   const name =
     error.code === 'NETWORK_ERROR' &&
@@ -79,7 +78,6 @@ export function sendErrorBeacon(
           code: error.code,
           message: String(error.message).slice(0, 300),
           checkout_url: checkoutUrl,
-          sdk_version: sdkVersion,
         },
       },
     ],
