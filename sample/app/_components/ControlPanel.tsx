@@ -560,7 +560,7 @@ export function ControlPanel({
           <input
             type="number"
             className={input + " text-right"}
-            placeholder="off"
+            placeholder="20000 (0 = off)"
             value={config.loadTimeout ?? ""}
             onChange={(e) =>
               update({

@@ -126,7 +126,7 @@ try {
 | `ariaLabel` | `string` | `'Stash Pay checkout'` | |
 | `iframe` | `StashPayIframeOptions` | — | See below. |
 | `allowedCheckoutHosts` | `string[]` | — | Optional host allowlist for `checkoutUrl`. Entries are exact hosts (`pay.stash.gg`) or `*.domain` wildcards (apex + any subdomain). If set and the URL's host is not allowed, pre-flight validation fails with `DOMAIN_NOT_ALLOWED`. Distinct from `iframe.allowedOrigins`, which validates `postMessage` origins. |
-| `loadTimeout` | `number` (ms) | — | If the checkout iframe does not load within this many ms, `onError` fires with `NETWORK_ERROR`. Omitted or `0` disables the timeout (opt-in). |
+| `loadTimeout` | `number` (ms) | `20000` | If the checkout iframe does not load within this many ms, `onError` fires with `NETWORK_ERROR`. Set `0` to disable. |
 | `debug` | `boolean` | `false` | When `true`, logs SDK lifecycle and callback traces via `console.log` (`[stash-pay]` prefix). |
 | `injectStyles` | `boolean` | UMD: `true`, else `false` | Runtime `<style>` injection toggle. |
 | `cspNonce` | `string` | — | Applied to the injected `<style>` when runtime injection is enabled. |
@@ -206,9 +206,11 @@ unparseable, a non-`http(s)` scheme such as `javascript:`/`data:`, or a host out
 `allowedCheckoutHosts`) is a **pre-flight failure**: the modal does not open and the
 checkout iframe is never created.
 
-For a syntactically valid URL whose server never responds, set `loadTimeout` to
-surface a `NETWORK_ERROR` after a bounded wait. Without `loadTimeout`, the loading
-spinner can run indefinitely — the SDK cannot tell a slow checkout from a dead host.
+For a syntactically valid URL whose server never responds, the load timeout
+surfaces a `NETWORK_ERROR` after a bounded wait (20s by default, tune with
+`loadTimeout`, disable with `0`). A checkout that finishes loading after the
+timeout still becomes ready: treat the error as the spinner giving up, not a
+terminal verdict.
 
 ### Pre-flight failures (`open()` / `mount()`)
 
