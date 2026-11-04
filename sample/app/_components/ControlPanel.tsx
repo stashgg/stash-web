@@ -154,7 +154,7 @@ export function ControlPanel({
       <Section title="Checkout URL">
         <input
           className={input}
-          placeholder="https://pay.stash.gg/checkout/..."
+          placeholder="https://checkout.stash.gg/pay/..."
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
           onKeyDown={(e) => {
@@ -543,7 +543,7 @@ export function ControlPanel({
           <input
             type="text"
             className={input}
-            placeholder="pay.stash.gg, *.stashpreview.com"
+            placeholder="checkout.stash.gg, *.stashpreview.com"
             value={(config.allowedCheckoutHosts ?? []).join(", ")}
             onChange={(e) => {
               const hosts = e.target.value

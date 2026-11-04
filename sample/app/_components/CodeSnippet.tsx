@@ -98,7 +98,7 @@ function buildReactSnippet(config: PlaygroundConfig, url: string): string {
 
 function buildVanillaSnippet(config: PlaygroundConfig, url: string): string {
   const options: Record<string, unknown> = {
-    checkoutUrl: url || 'https://pay.stash.gg/checkout/...',
+    checkoutUrl: url || 'https://checkout.stash.gg/pay/...',
   };
   for (const key of PROP_ORDER) {
     const v = config[key];
