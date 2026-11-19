@@ -12,6 +12,9 @@
  *      { source: 'stash_sdk', method: 'onPaymentSuccess', payload: {...} }
  *
  * Both envelopes resolve to the same typed event union.
+ *
+ * `{ source: 'stash_sdk', method: 'onCheckoutReady' }` is not a payment event
+ * and never reaches `parseMessage`'s result: see `isCheckoutReadyMessage`.
  */
 
 import { MESSAGE_PREFIX } from './constants';
@@ -77,6 +80,26 @@ export function parseMessage(
   }
 
   return null;
+}
+
+/**
+ * True for the checkout's "page hydrated" signal:
+ * `{ source: 'stash_sdk', method: 'onCheckoutReady' }`. It only lets the host
+ * hide its loading overlay before the iframe `load` event, which also waits
+ * for the checkout's own nested frames (card fields, wallets, risk scripts).
+ * The caller still has to prove the message came from its own iframe.
+ */
+export function isCheckoutReadyMessage(
+  event: MessageEvent,
+  allowedOrigins?: string[],
+): boolean {
+  if (allowedOrigins && allowedOrigins.length > 0) {
+    if (!allowedOrigins.includes(event.origin)) return false;
+  }
+  const data = event.data;
+  if (typeof data !== 'object' || data === null) return false;
+  const record = data as Record<string, unknown>;
+  return record.source === 'stash_sdk' && record.method === 'onCheckoutReady';
 }
 
 function parseStashSdkEnvelope(

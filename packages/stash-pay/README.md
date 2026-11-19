@@ -126,7 +126,7 @@ try {
 | `ariaLabel` | `string` | `'Stash Pay checkout'` | |
 | `iframe` | `StashPayIframeOptions` | — | See below. |
 | `allowedCheckoutHosts` | `string[]` | — | Optional host allowlist for `checkoutUrl`. Entries are exact hosts (`pay.stash.gg`) or `*.domain` wildcards (apex + any subdomain). If set and the URL's host is not allowed, pre-flight validation fails with `DOMAIN_NOT_ALLOWED`. Distinct from `iframe.allowedOrigins`, which validates `postMessage` origins. |
-| `loadTimeout` | `number` (ms) | `20000` | If the checkout iframe does not load within this many ms, `onError` fires with `NETWORK_ERROR`. Set `0` to disable. |
+| `loadTimeout` | `number` (ms) | `20000` | If the checkout iframe neither loads nor reports itself ready within this many ms, `onError` fires with `NETWORK_ERROR`. Set `0` to disable. |
 | `debug` | `boolean` | `false` | When `true`, logs SDK lifecycle and callback traces via `console.log` (`[stash-pay]` prefix). |
 | `injectStyles` | `boolean` | UMD: `true`, else `false` | Runtime `<style>` injection toggle. |
 | `cspNonce` | `string` | — | Applied to the injected `<style>` when runtime injection is enabled. |
@@ -408,6 +408,22 @@ window.parent.postMessage(
 
 Both envelopes resolve to the same typed `onSuccess` callback — pick
 whichever is easier to emit from the checkout page.
+
+### Loading overlay
+
+The SDK shows its loading overlay until the checkout is ready. The hosted
+checkout posts this envelope once its page has hydrated:
+
+```js
+window.parent.postMessage({ source: 'stash_sdk', method: 'onCheckoutReady' }, '*');
+```
+
+It is accepted only from the SDK's own iframe and the checkout URL's origin
+(and from `iframe.allowedOrigins`, when set). It hides the overlay and stops
+the `loadTimeout` watchdog. It fires no callback: `onReady` still fires on the
+iframe's first `load` event. A checkout that does not send it clears the
+overlay on `load`, which also waits for the checkout's own nested frames
+(card fields, wallet buttons), so it comes later on a slow connection.
 
 ## Security notes
 

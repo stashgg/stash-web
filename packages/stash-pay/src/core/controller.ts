@@ -26,7 +26,7 @@ import {
 } from "./dom";
 import { Emitter } from "./emitter";
 import { StashPayError, toStashPayError } from "./errors";
-import { parseMessage } from "./events";
+import { isCheckoutReadyMessage, parseMessage } from "./events";
 import { createFocusTrap, type FocusTrap } from "./focus-trap";
 import { preconnectOrigin } from "./preconnect";
 import { applyTheme, readAnimationDurationMs } from "./theme";
@@ -424,38 +424,74 @@ export class StashPayController {
     return true;
   }
 
+  /**
+   * The checkout posts `onCheckoutReady` once it is drawn and hydrated, which
+   * on a slow phone is seconds before the iframe `load` event: `load` also
+   * waits for the checkout's nested frames. Hides the loading overlay and
+   * settles the watchdog. It does not emit `ready`, which keeps meaning the
+   * first `load` (bridge installed, `isReady` true). A checkout that never
+   * sends it still clears the overlay on `load`.
+   *
+   * Returns `true` when the message was the ready signal (handled or
+   * rejected), `false` for unrelated messages.
+   */
+  private handleCheckoutReady(ev: MessageEvent): boolean {
+    if (!isCheckoutReadyMessage(ev, this.options.iframe?.allowedOrigins)) {
+      return false;
+    }
+    if (!this.isFromCurrentCheckout(ev)) {
+      this.log("checkout-ready: rejected (not our iframe)", {
+        origin: ev.origin,
+      });
+      return true;
+    }
+    this.log("checkout-ready: hiding loading overlay");
+    this.settleLoadEarly();
+    return true;
+  }
+
+  /**
+   * True when a message comes from this controller's iframe and the origin of
+   * the checkout URL it was last pointed at. Known residual: the WindowProxy
+   * survives navigation, so a queued message from a previous SAME-origin
+   * document still passes; `ev.source` alone cannot discriminate documents.
+   */
+  private isFromCurrentCheckout(ev: MessageEvent): boolean {
+    if (!this.tree || ev.source !== this.tree.iframe.contentWindow) {
+      return false;
+    }
+    try {
+      return ev.origin === new URL(this._currentSrc ?? "").origin;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Settle the load watchdog and hide the loading overlay before `load`. */
+  private settleLoadEarly(): void {
+    if (!this.tree) return;
+    this._loadSettled = true;
+    this.clearLoadTimeout();
+    this.tree.root.setAttribute(DATA_ATTR.loading, "false");
+  }
+
   private attachListeners(): void {
     if (!this.tree) return;
     const { backdrop, closeButton, iframe, root } = this.tree;
 
     this.messageHandler = (ev: MessageEvent) => {
       if (this.handleCloseSuccessWindow(ev)) return;
+      if (this.handleCheckoutReady(ev)) return;
       const parsed = parseMessage(ev, this.options.iframe?.allowedOrigins);
       if (parsed) {
         this.log("message: parsed", parsed.type, parsed);
-        let currentOrigin = "";
-        try {
-          currentOrigin = new URL(this._currentSrc ?? "").origin;
-        } catch {
-          // no current src; fall through without settling
-        }
-        if (
-          this.tree &&
-          ev.source === this.tree.iframe.contentWindow &&
-          ev.origin === currentOrigin
-        ) {
-          // Provably from our iframe and the current document's origin: the
-          // checkout is alive even if its load event hasn't fired yet (its JS
-          // is executing; only subresources can still be pending), so hide the
-          // spinner like the load handler would. Without this, a pre-load
+        if (this.isFromCurrentCheckout(ev)) {
+          // The checkout is alive even if its load event hasn't fired yet (its
+          // JS is executing; only subresources can still be pending), so hide
+          // the spinner like the load handler would. Without this, a pre-load
           // envelope would disarm the watchdog yet leave the opaque loading
-          // overlay up with nothing left to clear it. Known residual: the
-          // WindowProxy survives navigation, so a queued message from a
-          // previous SAME-origin document can still settle a fresh load's
-          // watchdog. ev.source alone cannot discriminate documents.
-          this._loadSettled = true;
-          this.clearLoadTimeout();
-          this.tree.root.setAttribute(DATA_ATTR.loading, "false");
+          // overlay up with nothing left to clear it.
+          this.settleLoadEarly();
         }
         this.dispatchPaymentEvent(parsed);
       } else {

@@ -13,8 +13,8 @@ proxy; otherwise stay silent.
 Defer formatting, TypeScript diagnostics, and sample-app lint concerns to the
 configured TypeScript and ESLint tooling in `packages/stash-pay/tsconfig.json` and
 `sample/eslint.config.mjs`. Do not request blanket coverage, a test framework,
-table-driven tests, or tests for presentation-only playground/CSS changes: this
-repository has no test harness. Do not comment on Tailwind/class ordering or visual
+table-driven tests, or tests for presentation-only playground/CSS changes: the
+only harness is the SDK's small Vitest suite (`npm test --workspace=@stashgg/stash-pay`). Do not comment on Tailwind/class ordering or visual
 taste. The documented `allowedCheckoutHosts`, `iframe.allowedOrigins`, `loadTimeout`,
 and `debug` settings are opt-in consumer choices, so do not demand that every host
 enable them without a concrete integration failure.

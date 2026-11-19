@@ -173,8 +173,9 @@ export interface StashPayOptions {
   allowedCheckoutHosts?: string[];
 
   /**
-   * Milliseconds to wait for the checkout iframe's first load before firing
-   * `onError` with code `NETWORK_ERROR`. Default: 20000. Set `0` to disable.
+   * Milliseconds to wait for the checkout iframe's first load (or the
+   * checkout's ready signal, whichever comes first) before firing `onError`
+   * with code `NETWORK_ERROR`. Default: 20000. Set `0` to disable.
    */
   loadTimeout?: number;
 
