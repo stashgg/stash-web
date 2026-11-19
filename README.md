@@ -169,6 +169,7 @@ npm run build           # both
 - `npm run build:package` — build only `@stashgg/stash-pay`
 - `npm run build:sample` — build only the playground (rebuilds the SDK first)
 - `npm run typecheck --workspace=@stashgg/stash-pay` — typecheck the SDK without emitting
+- `npm test --workspace=@stashgg/stash-pay`: run the SDK's unit tests (Vitest, jsdom)
 
 ## Environment variables (sample only)
 
