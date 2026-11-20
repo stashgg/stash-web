@@ -1,6 +1,6 @@
 {
   "name": "@stashgg/stash-pay",
-  "version": "2.2.4",
+  "version": "2.3.0",
   "description": "Embeddable Stash Pay checkout SDK — React component + framework-agnostic core + script-tag UMD.",
   "type": "module",
   "main": "./dist/index.cjs",
